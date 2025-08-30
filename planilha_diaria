@@ -1,0 +1,41 @@
+SELECT
+  pr.status as Status,
+  pr.proposal_id as Proposal,
+  TIMESTAMP_SUB(pr._created, INTERVAL 3 HOUR) AS data_criacao,
+  pr.proposal.insured_data.full_name AS Nome_Segurado,
+  pr.status_detail.is_counter_proposal AS Contraproposta,
+  (
+    SELECT ch.last_transaction.payment_profile.holder_name
+    FROM UNNEST(fi.first_invoice.charges) AS ch
+    WHERE ch.last_transaction.payment_profile.holder_name IS NOT NULL
+    ORDER BY ch.due_at DESC
+    LIMIT 1
+  ) AS Nome_pagador,
+  bd.full_name AS Nome_corretor,
+  bd.email AS Email_Corretor,
+  CASE WHEN iw.cpf IS NOT NULL THEN 'blocklist_segurado' END AS Watchlist_Segurado,
+  CASE WHEN bw.broker_id IS NOT NULL THEN 'blocklist_broker' END AS Watchlist_Broker,
+  ps.payment_method AS Metodo_pagamento,
+  pr.proposal.sale_channel AS Canal,
+  ps.monthly_premium AS Premio_mensal,
+  ps.frequency AS Frequencia
+
+FROM `st_mongo_backoffice_underwriting.proposal` AS pr
+
+LEFT JOIN `st_mongo_backoffice_underwriting.insured_watch_list` AS iw
+  ON pr.proposal.insured_data.cpf = iw.cpf
+
+LEFT JOIN `st_mongo_backoffice_underwriting.broker_watch_list` AS bw
+  ON pr.broker_id = bw.broker_id
+
+LEFT JOIN `azos_analytics.tban_broker_data_analytics` AS bd
+  ON pr.broker_id = bd._id
+
+LEFT JOIN `azos_analytics.tban_proposal_summarize` AS ps
+  ON pr.proposal_id = ps.proposal_id
+
+LEFT JOIN `st_mongo_backoffice_underwriting.first_invoice` AS fi
+  ON pr.proposal_id = fi.proposal_id
+  
+WHERE pr.status = 'awaiting_analysis'
+  AND pr._created > '2025-08-25';
