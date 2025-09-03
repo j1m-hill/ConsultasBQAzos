@@ -1,0 +1,19 @@
+  SELECT
+  EXTRACT(MONTH FROM uw._created) AS month,
+  count(uw.proposal_id),
+  FORMAT ('%.2f', SUM (pp.monthly_premium)) AS premio_total,
+  FORMAT ('%.2f', SUM (CASE 
+        WHEN uw.status = 'refused' 
+        THEN pp.monthly_premium 
+        ELSE 0 
+        END)) as premio_recusado
+FROM
+  `azos-data.st_mongo_backoffice_underwriting.proposal` as uw
+  LEFT JOIN `azos_analytics.tban_proposal_summarize` as pp
+  USING (proposal_id)
+WHERE
+  uw._created BETWEEN '2025-01-01' AND '2025-08-31'
+GROUP BY
+  month
+ORDER BY
+  month
