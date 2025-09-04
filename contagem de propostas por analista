@@ -1,0 +1,46 @@
+SELECT
+  EXTRACT(MONTH FROM TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR)) AS month,
+  COUNT(DISTINCT uw.proposal_id) AS propostas_totais,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'jimmy.monte@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_jimmy,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'viviane@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_viviane,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'raquel@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_raquel,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'andre@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_andre,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'nycolle.miranda@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_nycolle,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'mariane.carvalho@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_mariane,
+  COUNT(DISTINCT CASE
+    WHEN activity.data.assigned_to = 'thamyris.monte@azos.com.br' THEN uw.proposal_id
+    -- O 'ELSE NULL' é implícito e não precisa ser escrito
+  END) AS propostas_thamyris,
+FROM
+  `azos-data.st_mongo_backoffice_underwriting.proposal` AS uw
+LEFT JOIN
+  `azos_analytics.tban_proposal_summarize` AS pp
+  USING (proposal_id)
+LEFT JOIN
+  `st_mongo_backoffice_underwriting.proposal_activity` AS act
+  USING (proposal_id)
+LEFT JOIN UNNEST(act.activities) AS activity
+WHERE
+  TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR) BETWEEN '2025-01-01' AND '2025-08-31'
+GROUP BY
+  month
+ORDER BY
+  month
