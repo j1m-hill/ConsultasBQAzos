@@ -5,12 +5,20 @@ SELECT
   FORMAT ('%.2f', SUM(CASE
     WHEN uw.status = 'refused' THEN pp.monthly_premium
     ELSE 0
-  END)) AS premio_recusado
+  END)) AS premio_recusado,
+  FORMAT ('%.2f', SUM(CASE
+    WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2c' THEN pp.monthly_premium
+    ELSE 0
+  END)) AS premio_recusado_B2C,
+  FORMAT ('%.2f', SUM(CASE
+    WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2b' THEN pp.monthly_premium
+    ELSE 0
+  END)) AS premio_recusado_Broker
 FROM
   `azos-data.st_mongo_backoffice_underwriting.proposal` AS uw
-LEFT JOIN
+  LEFT JOIN
   `azos_analytics.tban_proposal_summarize` AS pp
-USING
+  USING
   (proposal_id)
 WHERE
   TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR) BETWEEN '2025-01-01' AND '2025-08-31'
