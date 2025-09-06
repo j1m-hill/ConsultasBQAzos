@@ -1,32 +1,40 @@
-WITH propostas_calculo AS (
-  SELECT
-    proposal_id,
-    TIMESTAMP_SUB(_created, INTERVAL 3 HOUR) AS data_criacao,
-    MAX(CASE 
-      WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred' 
-      THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR) 
-    END) AS horario_atribuicao,
-    MAX(CASE 
-      WHEN activity.event = 'STATUS_UPDATED' AND (activity.data.status = 'refused' OR activity.data.status = 'accepted') AND activity.data.category != 'fred' 
-      THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR) 
-    END) AS horario_conclusao
-  FROM
-    `st_mongo_backoffice_underwriting.proposal_activity`,
-    UNNEST(activities) AS activity
-  WHERE
-    _created BETWEEN '2025-01-01' AND '2025-08-31'
-  GROUP BY
-    proposal_id,
-    _created
-)
-
 SELECT
-  proposal_id,
-  data_criacao,
-  horario_atribuicao,
-  horario_conclusao
-FROM
-  propostas_calculo
+  TIMESTAMP_SUB(ppa._created, INTERVAL 3 HOUR) AS data_criacao,
+  ppa.proposal_id, 
+  MIN(CASE
+    WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred' --IN ('jimmy.monte@azos.com.br', 'viviane@azos.com.br', 'thamyris.monte@azos.com.br', 'nycolle.miranda@azos.com.br', 'andre@azos.com.br')
+    THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR)
+  END) AS data_atribuicao,
+
+  MAX(CASE
+    WHEN activity.event = 'STATUS_UPDATED' AND activity.author != 'fred' --IN ('jimmy.monte@azos.com.br', 'viviane@azos.com.br', 'thamyris.monte@azos.com.br', 'nycolle.miranda@azos.com.br', 'andre@azos.com.br')
+    AND activity.data.status IN ('refused', 'accepted')
+    THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR)
+  END) AS data_conclusao
+
+FROM 
+  `azos-data.st_mongo_backoffice_underwriting.proposal_activity` as ppa,
+  UNNEST (activities) AS activity
+LEFT JOIN `st_mongo_backoffice_underwriting.proposal` AS pp
+USING (proposal_id)
+
 WHERE
-  horario_atribuicao IS NOT NULL
-  AND horario_conclusao IS NOT NULL
+  TIMESTAMP_SUB(ppa._created, INTERVAL 3 HOUR) BETWEEN '2025-08-01' AND '2025-08-31'
+  AND pp.status_detail.category = 'simple'
+
+GROUP BY
+  ppa.proposal_id,
+  ppa._created
+
+
+
+HAVING
+  MAX(CASE
+    WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred' --IN ('jimmy.monte@azos.com.br', 'viviane@azos.com.br', 'thamyris.monte@azos.com.br', 'nycolle.miranda@azos.com.br', 'andre@azos.com.br')
+    THEN 1
+    ELSE 0
+  END) = 1
+
+  ORDER BY
+ppa._created
+  
