@@ -1,0 +1,45 @@
+SELECT
+  TIMESTAMP_SUB(ppa._created, INTERVAL 3 HOUR) AS data_criacao,
+  ppa.proposal_id, 
+  pp.broker_id,
+  pp.status,
+  pp.assigned_to,
+  pp.status_detail.category, -- Adicionando a coluna de categoria
+  MIN(CASE
+    WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred'
+    THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR)
+  END) AS data_atribuicao,
+
+  MAX(CASE
+    WHEN activity.event = 'STATUS_UPDATED' AND activity.author != 'fred'
+    AND activity.data.status IN ('refused', 'accepted')
+    THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR)
+  END) AS data_conclusao
+
+FROM 
+  `azos-data.st_mongo_backoffice_underwriting.proposal_activity` AS ppa,
+  UNNEST (activities) AS activity
+INNER JOIN `st_mongo_backoffice_underwriting.proposal` AS pp
+USING (proposal_id)
+
+WHERE
+  TIMESTAMP_SUB(ppa._created, INTERVAL 3 HOUR) BETWEEN '2025-08-01' AND '2025-08-31'
+  AND pp.status_detail.category = 'simple'
+
+GROUP BY
+  ppa.proposal_id,
+  ppa._created,
+  pp.broker_id,
+  pp.status,
+  pp.assigned_to,
+  pp.status_detail.category -- Adicionando a coluna de categoria aqui também
+
+HAVING
+  MAX(CASE
+    WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred'
+    THEN 1
+    ELSE 0
+  END) = 1
+
+ORDER BY
+  ppa._created
