@@ -1,0 +1,32 @@
+WITH propostas_calculo AS (
+  SELECT
+    proposal_id,
+    TIMESTAMP_SUB(_created, INTERVAL 3 HOUR) AS data_criacao,
+    MAX(CASE 
+      WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred' 
+      THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR) 
+    END) AS horario_atribuicao,
+    MAX(CASE 
+      WHEN activity.event = 'STATUS_UPDATED' AND (activity.data.status = 'refused' OR activity.data.status = 'accepted') AND activity.data.category != 'fred' 
+      THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR) 
+    END) AS horario_conclusao
+  FROM
+    `st_mongo_backoffice_underwriting.proposal_activity`,
+    UNNEST(activities) AS activity
+  WHERE
+    _created BETWEEN '2025-01-01' AND '2025-08-31'
+  GROUP BY
+    proposal_id,
+    _created
+)
+
+SELECT
+  proposal_id,
+  data_criacao,
+  horario_atribuicao,
+  horario_conclusao
+FROM
+  propostas_calculo
+WHERE
+  horario_atribuicao IS NOT NULL
+  AND horario_conclusao IS NOT NULL
