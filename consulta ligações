@@ -1,0 +1,23 @@
+SELECT
+  EXTRACT(MONTH FROM TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR)) AS month,
+  COUNT(uw.proposal_id) as qtde_proposta,
+  COUNT(
+    CASE     WHEN uw.status = 'refused' AND status_detail.category = 'with_contact' 
+    THEN 1     ELSE NULL
+    END) AS recusas_c_contato,
+  COUNT(CASE
+    WHEN uw.status = 'accepted' AND status_detail.category = 'with_contact' 
+    THEN 1     ELSE NULL 
+    END) AS aprovadas_c_contato
+  FROM
+  `azos-data.st_mongo_backoffice_underwriting.proposal` AS uw
+  LEFT JOIN
+  `azos_analytics.tban_proposal_summarize` AS pp
+  USING
+  (proposal_id)
+WHERE
+  TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR) BETWEEN '2025-01-01' AND '2025-08-31'
+GROUP BY
+  month
+ORDER BY
+  month
