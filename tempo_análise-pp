@@ -4,11 +4,15 @@ SELECT
   pp.broker_id,
   pp.status,
   pp.assigned_to,
-  pp.status_detail.category, -- Adicionando a coluna de categoria
+  pp.status_detail.category,
+  pp.proposal. sale_channel,
+  
   MIN(CASE
-    WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred'
+    WHEN activity.event = 'STATUS_UPDATED' 
+    AND activity.data.status = 'in_analysis' 
+    AND activity.author != 'fred'
     THEN TIMESTAMP_SUB(activity.created_at, INTERVAL 3 HOUR)
-  END) AS data_atribuicao,
+  END) AS data_inicio_analise,
 
   MAX(CASE
     WHEN activity.event = 'STATUS_UPDATED' AND activity.author != 'fred'
@@ -24,7 +28,7 @@ USING (proposal_id)
 
 WHERE
   TIMESTAMP_SUB(ppa._created, INTERVAL 3 HOUR) BETWEEN '2025-08-01' AND '2025-08-31'
-  AND pp.status_detail.category = 'simple'
+  AND pp.status_detail.category IN ('simple', 'with_counterproposal', 'with_contact', 'commercial')
 
 GROUP BY
   ppa.proposal_id,
@@ -32,11 +36,14 @@ GROUP BY
   pp.broker_id,
   pp.status,
   pp.assigned_to,
-  pp.status_detail.category -- Adicionando a coluna de categoria aqui também
+  pp.status_detail.category,
+  pp.proposal. sale_channel
 
 HAVING
   MAX(CASE
-    WHEN activity.event = 'ASSIGNED_TO' AND activity.author != 'fred'
+    WHEN activity.event = 'STATUS_UPDATED' 
+    AND activity.data.status = 'in_analysis' 
+    AND activity.author != 'fred'
     THEN 1
     ELSE 0
   END) = 1
