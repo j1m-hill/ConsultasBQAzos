@@ -1,6 +1,12 @@
 SELECT
   EXTRACT(MONTH FROM TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR)) AS month,
   COUNT(uw.proposal_id) as qtde_proposta,
+  COUNT(case 
+    WHEN uw.status = 'refused' THEN 1 END) as qtd_recusas,
+  COUNT(case 
+    WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2c' THEN 1 END) as qtd_recusas_b2c,
+  COUNT(case 
+    WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2b' THEN 1 END) as qtd_recusas_b2b,
   FORMAT ('%.2f', SUM(pp.monthly_premium)) AS premio_total,
   FORMAT ('%.2f', SUM(CASE
     WHEN uw.status = 'refused' THEN pp.monthly_premium
