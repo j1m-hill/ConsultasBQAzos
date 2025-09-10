@@ -4,7 +4,11 @@ SELECT
   COUNT(case 
     WHEN uw.status = 'refused' THEN 1 END) as qtd_recusas,
   COUNT(case 
+    WHEN uw.proposal.sale_channel = 'b2c' THEN 1 END) as qtd_pp_b2c,
+  COUNT(case 
     WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2c' THEN 1 END) as qtd_recusas_b2c,
+  COUNT(case 
+    WHEN uw.proposal.sale_channel = 'b2b' THEN 1 END) as qtd_pp_b2b,
   COUNT(case 
     WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2b' THEN 1 END) as qtd_recusas_b2b,
   FORMAT ('%.2f', SUM(pp.monthly_premium)) AS premio_total,
