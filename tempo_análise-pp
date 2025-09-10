@@ -29,6 +29,9 @@ USING (proposal_id)
 WHERE
   TIMESTAMP_SUB(ppa._created, INTERVAL 3 HOUR) BETWEEN '2025-08-01' AND '2025-08-31'
   AND pp.status_detail.category IN ('simple', 'with_counterproposal', 'with_contact', 'commercial')
+  --AND pp.assigned_to IN ('jimmy.monte@azos.com.br', 'andre@azos.com.br')
+  --AND pp.assigned_to NOT IN ('jimmy.monte@azos.com.br', 'andre@azos.com.br')
+
 
 GROUP BY
   ppa.proposal_id,
