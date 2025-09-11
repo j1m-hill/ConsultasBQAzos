@@ -8,7 +8,8 @@ pp.proposal.sale_channel,
 ae.macro_channel,
 ae.channel_groupment,
 pp.status_detail.reason,
-pp.status_detail.description
+pp.status_detail.description,
+pp.status_detail.is_reversible
 
 FROM `azos-data.st_mongo_backoffice_underwriting.proposal` as pp
 LEFT JOIN `azos-data.azos_harmonized.attribution_engine` as ae
