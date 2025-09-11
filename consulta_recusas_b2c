@@ -1,5 +1,6 @@
 with consulta_inside AS (
 SELECT 
+TIMESTAMP_SUB (pp._created,INTERVAL 3 HOUR) as data_criacao,
 pp.proposal_id,
 pp.proposal.insured_data.full_name as nome_segurado,
 pp.proposal.insured_data.email,
@@ -19,9 +20,9 @@ USING (proposal_id)
 WHERE pp.status = 'refused' AND pp._created >= '2025-01-01'
 )
 
-SELECT
-
-*
+SELECT *
 
 FROM consulta_inside
 WHERE macro_channel = 'B2C'
+
+order by data_criacao
