@@ -1,20 +1,22 @@
 with consulta_inside AS (
 SELECT 
 pp.proposal_id,
-pp.proposal.insured_data.full_name,
+pp.proposal.insured_data.full_name as nome_segurado,
 pp.proposal.insured_data.email,
+ps.monthly_premium as premio,
 pp.status,
-pp.proposal.sale_channel,
 ae.macro_channel,
 ae.channel_groupment,
-pp.status_detail.reason,
-pp.status_detail.description,
-pp.status_detail.is_reversible
+pp.status_detail.reason as motivo_de_recusa,
+pp.status_detail.description as justificativa,
+pp.status_detail.is_reversible as reversivel
 
 FROM `azos-data.st_mongo_backoffice_underwriting.proposal` as pp
 LEFT JOIN `azos-data.azos_harmonized.attribution_engine` as ae
 USING (proposal_id)
-WHERE pp.status = 'refused' AND pp._created >= '2025-09-11'
+LEFT JOIN `azos-data.azos_analytics.tban_proposal_summarize` as ps
+USING (proposal_id)
+WHERE pp.status = 'refused' AND pp._created >= '2025-01-01'
 )
 
 SELECT
@@ -22,4 +24,4 @@ SELECT
 *
 
 FROM consulta_inside
-WHERE channel_groupment = 'Inside Sales'
+WHERE macro_channel = 'B2C'
