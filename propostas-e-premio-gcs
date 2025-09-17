@@ -1,0 +1,27 @@
+with consulta_ligacoes AS (SELECT 
+pp.proposal_id,
+pp.broker_id,
+br.full_name,
+br.manager,
+pp.status,
+status_detail.category,
+ps.monthly_premium
+FROM `azos-data.st_mongo_backoffice_underwriting.proposal` as pp
+LEFT JOIN `azos_analytics.tban_broker_data_registration` as br
+ON pp.broker_id = br._id
+LEFT JOIN `azos_analytics.tban_proposal_summarize` as ps
+ON pp.proposal_id = ps.proposal_id
+WHERE --status_detail.category = 'with_contact' AND 
+proposal.sale_channel = 'b2b'
+AND pp.broker_id IS NOT NULL
+AND pp._created > '2025-01-01')
+
+SELECT 
+COUNT(proposal_id) as count_ligacoes,
+SUM(monthly_premium) as premio_total,
+manager as gc
+FROM consulta_ligacoes
+
+GROUP BY manager
+ORDER BY premio_total DESC
+
