@@ -1,0 +1,24 @@
+with consulta_ligacoes AS (SELECT 
+pp.proposal_id,
+pp.broker_id,
+br.full_name,
+br.manager,
+pp.status,
+status_detail.category
+FROM `azos-data.st_mongo_backoffice_underwriting.proposal` as pp
+LEFT JOIN `azos_analytics.tban_broker_data_registration` as br
+ON pp.broker_id = br._id
+WHERE status_detail.category = 'with_contact'
+AND proposal.sale_channel = 'b2b'
+AND broker_id IS NOT NULL
+AND pp._created > '2025-01-01')
+
+SELECT 
+COUNT(proposal_id) as count_proposal,
+manager as gc
+FROM consulta_ligacoes
+
+GROUP BY manager
+ORDER BY count(proposal_id) DESC
+
+limit 10
