@@ -18,7 +18,7 @@ AND pp._created > '2025-01-01')
 
 SELECT 
 COUNT(proposal_id) as count_ligacoes,
-SUM(monthly_premium) as premio_total,
+ROUND(SUM(monthly_premium), 2) as premio_total,
 manager as gc
 FROM consulta_ligacoes
 
