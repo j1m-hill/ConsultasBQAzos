@@ -1,0 +1,18 @@
+SELECT 
+
+wt.broker_id,
+wt.email,
+br.full_name,
+br.type,
+br.status,
+br.broker_potential,
+br.current_channel,
+wt.created_at as data_de_inclusao,
+br.manager,
+
+
+ 
+FROM `azos-data.st_mongo_backoffice_underwriting.broker_watch_list` as wt
+
+LEFT JOIN `azos_analytics.tban_broker_data_registration` as br
+ON wt.broker_id = br._id
