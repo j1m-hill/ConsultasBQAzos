@@ -1,0 +1,24 @@
+SELECT 
+bd._id as broker_id,
+bd.email,
+bd.full_name,
+bd.type,
+br.metropolitan_area,
+br.current_channel as relacionamento,
+bd.platform,
+bd.manager as gerente_comercial,
+bd.profile,
+bd.class,
+bd.status,
+bd.number_total_policies as apolices_aceitas,
+bd.number_active_policies as apolices_ativas,
+bd.premium_active as premio_ativo,
+bd.original_total_premium as premio_vendido,
+bd.broker_potential as potencial,
+
+
+
+
+ FROM `azos-data.azos_analytics.tban_broker_data_analytics` bd
+LEFT JOIN `azos-data.azos_analytics.tban_broker_data_registration` br
+ON bd._id = br._id
