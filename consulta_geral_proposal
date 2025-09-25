@@ -1,0 +1,29 @@
+SELECT
+
+pp._created as data_criacao,
+pp._updated as ultima_atualizacao,
+pp.proposal_id,
+pp.broker_id,
+pp.status,
+pp.assigned_to as responsavel,
+pp.status_detail.category,
+pp.status_detail.reason as motivo_recusa,
+pp.status_detail.is_reversible as e_reversivel,
+pp.status_detail.is_counter_proposal as e_contraproposta,
+pp.proposal.sale_channel as macro_channel,
+
+ps.payment_method,
+ps.monthly_premium as premio,
+ps.frequency as periodicidade,
+pp.proposal.insured_data.profession as profissao,
+pp.proposal.insured_data.salary as salario,
+pp.proposal.insured_data.is_smoker as fumante,
+pp.proposal.insured_data.gender as genero,
+
+
+
+FROM `azos-data.st_mongo_backoffice_underwriting.proposal` as pp
+LEFT join `azos-data.azos_analytics.tban_proposal_summarize` as ps
+ON pp.proposal_id = ps.proposal_id
+
+
