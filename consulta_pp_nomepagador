@@ -1,0 +1,19 @@
+SELECT
+    pp.proposal_id,
+    pp.proposal.insured_data.full_name,
+    charge.last_transaction.payment_profile.holder_name
+FROM
+    `st_mongo_backoffice_underwriting.proposal` AS pp
+LEFT JOIN
+    `st_mongo_backoffice_underwriting.first_invoice` AS fi USING (proposal_id)
+LEFT JOIN
+    UNNEST(fi.first_invoice.charges) AS charge
+WHERE
+    -- AQUI ESTÁ A MUDANÇA: Aplicamos LOWER() em ambos os lados
+    LOWER(pp.proposal.insured_data.full_name) != LOWER(charge.last_transaction.payment_profile.holder_name)
+    -- Mantemos as verificações para evitar erros com campos nulos
+    AND pp.proposal.insured_data.full_name IS NOT NULL
+    AND charge.last_transaction.payment_profile.holder_name IS NOT NULL
+    AND pp._created > '2025-09-01'
+    AND pp.status = "accepted"
+LIMIT 20
