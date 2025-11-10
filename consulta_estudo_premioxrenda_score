@@ -1,0 +1,27 @@
+SELECT
+_created,
+proposal_id,
+pp.status,
+assigned_to,
+status_detail.reason,
+proposal.sale_channel,
+proposal.insured_data.cpf,
+FORMAT ('%.2f',proposal.insured_data.salary) AS salario,
+proposal.payment_data.frequency,
+CASE
+  WHEN proposal.payment_data.frequency = 'annual' THEN (proposal.payment_data. price_cents / 100.0) / 12
+  ELSE (proposal.payment_data.price_cents / 100.0)
+END AS price_cents,
+CASE
+  WHEN ss.negatives = 'N' THEN 'Não' 
+  ELSE 'Sim'
+END as negativado,
+ss.score,
+
+FROM `azos-data.st_mongo_backoffice_underwriting.proposal` as pp
+LEFT JOIN `azos-data.st_azos.serasa_score_positive` as ss
+ON proposal.insured_data.cpf = document
+
+
+WHERE _created > '2025-01-01' 
+and status_detail.category != 'fred'
