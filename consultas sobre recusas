@@ -44,3 +44,48 @@ GROUP BY
   month
 ORDER BY
   month
+
+
+-- abaixo, visualização por analista
+
+SELECT
+  EXTRACT(MONTH FROM TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR)) AS month,
+  uw.assigned_to AS analista,   -- <<< AJUSTE ESTE CAMPO PARA O NOME REAL
+
+  -- QUANTIDADES
+  COUNT(uw.proposal_id) AS qtde_proposta,
+  COUNT(CASE WHEN uw.status = 'refused' THEN 1 END) AS qtd_recusas,
+
+  COUNT(CASE WHEN uw.proposal.sale_channel = 'b2c' THEN 1 END) AS qtd_pp_b2c,
+  COUNT(CASE WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2c' THEN 1 END) AS qtd_recusas_b2c,
+
+  COUNT(CASE WHEN uw.proposal.sale_channel = 'b2b' THEN 1 END) AS qtd_pp_b2b,
+  COUNT(CASE WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2b' THEN 1 END) AS qtd_recusas_b2b,
+
+  -- PRÊMIOS (iguais aos seus)
+  FORMAT ('%.2f', SUM(pp.monthly_premium)) AS premio_total,
+  FORMAT ('%.2f', SUM(CASE WHEN uw.status = 'refused' THEN pp.monthly_premium ELSE 0 END)) AS premio_recusado,
+
+  FORMAT ('%.2f', SUM(CASE WHEN uw.proposal.sale_channel = 'b2c' THEN pp.monthly_premium ELSE 0 END)) AS premio_b2c,
+  FORMAT ('%.2f', SUM(CASE WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2c' THEN pp.monthly_premium ELSE 0 END)) AS premio_recusado_B2C,
+
+  FORMAT ('%.2f', SUM(CASE WHEN uw.proposal.sale_channel = 'b2b' THEN pp.monthly_premium ELSE 0 END)) AS premio_broker,
+  FORMAT ('%.2f', SUM(CASE WHEN uw.status = 'refused' AND uw.proposal.sale_channel = 'b2b' THEN pp.monthly_premium ELSE 0 END)) AS premio_recusado_Broker
+
+FROM
+  `azos-data.st_mongo_backoffice_underwriting.proposal` AS uw
+LEFT JOIN
+  `azos_analytics.tban_proposal_summarize` AS pp
+USING (proposal_id)
+
+WHERE
+  TIMESTAMP_SUB(uw._created, INTERVAL 3 HOUR) >= "2025-01-01"
+
+GROUP BY
+  month,
+  analista
+
+ORDER BY
+  analista,
+  month;
+
