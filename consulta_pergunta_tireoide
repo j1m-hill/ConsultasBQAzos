@@ -1,0 +1,16 @@
+-- vendo casos que responderam pergunta nova
+
+SELECT distinct dps_id, proposal_id
+FROM `azos-data.azos_analytics.dps` 
+WHERE identifier = 'DPS-02-12-2-1-1-2-1-1'
+
+-- vendo quantas dessas cotações viraram proposta
+
+SELECT proposal_id, dps_id, status
+FROM `azos-data.azos_analytics.tban_proposal_summarize` 
+WHERE proposal_id IN (proposal_id vai aqui)
+
+-- vendo quantas foram pagas
+SELECT proposal_id, status, status_detail. description, proposal.payment_data. frequency, proposal.payment_data. price_cents/100
+FROM `azos-data.st_mongo_backoffice_underwriting.proposal` 
+WHERE proposal_id IN (proposal_id vai aqui)
