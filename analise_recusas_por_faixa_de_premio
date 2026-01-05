@@ -1,0 +1,26 @@
+WITH base_propostas AS (
+  SELECT
+    pp.proposal_id,
+    pp.status,
+    ps.monthly_premium AS premio,
+    ae.macro_channel
+  FROM `azos-data.st_mongo_backoffice_underwriting.proposal` AS pp
+  LEFT JOIN `azos-data.azos_harmonized.attribution_engine` AS ae
+    USING (proposal_id)
+  LEFT JOIN `azos-data.azos_analytics.tban_proposal_summarize` AS ps
+    USING (proposal_id)
+  WHERE pp._created >= TIMESTAMP('2025-12-01')
+    AND pp._created <  TIMESTAMP('2026-01-01')
+    AND ae.macro_channel IN ('Broker', 'Broker Plataforma')
+    AND ps.monthly_premium > 1000
+)
+
+SELECT
+  -- Propostas recebidas (todas)
+  COUNT(DISTINCT proposal_id) AS qtd_propostas_recebidas_premio_maior_500,
+  ROUND(SUM(premio), 2) AS soma_premio_recebidas_maior_500,
+
+  -- Propostas recusadas
+  COUNT(DISTINCT IF(status = 'refused', proposal_id, NULL)) AS qtd_propostas_recusadas_premio_maior_500,
+  ROUND(SUM(IF(status = 'refused', premio, 0)), 2) AS soma_premio_recusadas_maior_500
+FROM base_propostas;
