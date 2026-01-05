@@ -1,0 +1,25 @@
+WITH consulta_inside AS (
+  SELECT 
+    TIMESTAMP_SUB(pp._created, INTERVAL 3 HOUR) AS data_criacao,
+    pp.proposal_id,
+    ps.monthly_premium AS premio,
+    ae.macro_channel,
+    pp.status_detail.reason AS motivo_de_recusa
+  FROM `azos-data.st_mongo_backoffice_underwriting.proposal` AS pp
+  LEFT JOIN `azos-data.azos_harmonized.attribution_engine` AS ae
+    USING (proposal_id)
+  LEFT JOIN `azos-data.azos_analytics.tban_proposal_summarize` AS ps
+    USING (proposal_id)
+  WHERE pp.status = 'refused'
+    AND pp._created >= TIMESTAMP('2025-11-01')
+    AND pp._created <  TIMESTAMP('2025-12-01')
+)
+
+SELECT
+  motivo_de_recusa,
+  COUNT(DISTINCT proposal_id) AS qtd_propostas,
+  ROUND(SUM(IFNULL(premio, 0)), 2) AS soma_premio
+FROM consulta_inside
+WHERE macro_channel IN ('Broker', 'Broker Plataforma')
+GROUP BY motivo_de_recusa
+ORDER BY soma_premio DESC;
