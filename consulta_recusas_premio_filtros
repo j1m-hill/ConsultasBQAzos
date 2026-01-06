@@ -1,0 +1,38 @@
+WITH consulta_inside AS (
+  SELECT
+    TIMESTAMP_SUB(pp._created, INTERVAL 3 HOUR) AS data_criacao,
+    pp.proposal_id,
+    pp.proposal.insured_data.full_name AS nome_segurado,
+    pp.proposal.insured_data.email AS email,
+    ps.monthly_premium AS premio,
+    pp.status,
+    ae.macro_channel,
+    ae.channel_groupment,
+    pp.status_detail.reason AS motivo_de_recusa,
+    pp.status_detail.description AS justificativa,
+    pp.status_detail.is_reversible AS reversivel
+  FROM `azos-data.st_mongo_backoffice_underwriting.proposal` AS pp
+  LEFT JOIN `azos-data.azos_harmonized.attribution_engine` AS ae
+    USING (proposal_id)
+  LEFT JOIN `azos-data.azos_analytics.tban_proposal_summarize` AS ps
+    USING (proposal_id)
+  WHERE pp.status = 'refused'
+    AND pp._created >= TIMESTAMP('2025-12-01')
+    AND pp._created <  TIMESTAMP('2026-01-01')
+)
+
+SELECT
+  proposal_id,
+  data_criacao,
+  nome_segurado,
+  email,
+  macro_channel,
+  channel_groupment,
+  motivo_de_recusa,
+  justificativa,
+  reversivel,
+  ROUND(premio, 2) AS premio
+FROM consulta_inside
+WHERE macro_channel IN ('Broker', 'Broker Plataforma')
+  AND premio > 1000
+ORDER BY premio DESC;
