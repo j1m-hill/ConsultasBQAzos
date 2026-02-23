@@ -1,50 +1,63 @@
 WITH atividade_flags AS (
-  SELECT
-    proposal_id,
-    -- Verifica se houve 'awaiting_pendencies'
-    IF(
-      EXISTS (
+            SELECT
+                proposal_id,
+
+                IF (
+    EXISTS (
         SELECT 1
         FROM UNNEST(activities) AS activity
         WHERE activity.data.status = 'awaiting_pendencies'
-      ), 'Sim', 'Não'
-    ) AS teve_ligacao,
+          AND EXISTS (
+              SELECT 1
+              FROM UNNEST(activity.data.category) AS cat
+              WHERE cat NOT IN (
+                  'awaiting_internal_information',
+                  'system_error'
+              )
+          )
+    ),
+    'Sim',
+    'Não'
+) AS teve_pendencia,
 
-    -- Verifica se houve 'awaiting_validation'
-    IF(
-      EXISTS (
-        SELECT 1
-        FROM UNNEST(activities) AS activity
-        WHERE activity.data.status = 'awaiting_validation'
-      ), 'Sim', 'Não'
-    ) AS teve_validacao
+                IF (
+                    EXISTS (
+                        SELECT 1
+                        FROM UNNEST(activities) AS activity
+                        WHERE activity.data.status = 'awaiting_validation'
+                    ),
+                    'Sim',
+                    'Não'
+                ) AS teve_validacao
 
-  FROM `azos-data.st_mongo_backoffice_underwriting.proposal_activity`
-)
+            FROM `azos-data.st_mongo_backoffice_underwriting.proposal_activity`
+        )
 
 SELECT
 
-  pp._created AS data_criacao,
-  pp._updated AS ultima_atualizacao,
+  TIMESTAMP_SUB(pp._created, INTERVAL 3 HOUR) AS data_analise,
+  FORMAT_TIMESTAMP('%Y-%m', TIMESTAMP_SUB(pp._created, INTERVAL 3 HOUR)) AS mes_ano,
+  TIMESTAMP_SUB(pp._updated, INTERVAL 3 HOUR) AS ultima_atualizacao,
   pp.proposal_id,
-  pp.broker_id,
+  IFNULL (pp.broker_id, "b2c"),
   pp.status,
-  pp.assigned_to AS responsavel,
+  IFNULL (pp.assigned_to, "fred") AS responsavel,
   pp.status_detail.category,
   pp.status_detail.reason AS motivo_recusa,
   pp.status_detail.is_reversible AS e_reversivel,
   pp.status_detail.is_counter_proposal AS e_contraproposta,
-  pp.proposal.sale_channel AS macro_channel,
+  ae.macro_channel AS macro_channel,
+  ae.channel_groupment as grupo_canal,
 
   ps.payment_method,
-  ps.monthly_premium AS premio,
+  ps.monthly_premium AS premio_mensalizado,
   ps.frequency AS periodicidade,
   pp.proposal.insured_data.profession AS profissao,
   pp.proposal.insured_data.salary AS salario,
   pp.proposal.insured_data.is_smoker AS fumante,
   pp.proposal.insured_data.gender AS genero,
 
-  af.teve_ligacao,
+  af.teve_pendencia,
   af.teve_validacao
 
 FROM `azos-data.st_mongo_backoffice_underwriting.proposal` AS pp
@@ -52,5 +65,13 @@ FROM `azos-data.st_mongo_backoffice_underwriting.proposal` AS pp
 LEFT JOIN `azos-data.azos_analytics.tban_proposal_summarize` AS ps
   ON pp.proposal_id = ps.proposal_id
 
+LEFT JOIN `azos-data.azos_harmonized.attribution_engine` as ae
+ON pp.proposal_id = ae.proposal_id
+
 LEFT JOIN atividade_flags AS af
   ON pp.proposal_id = af.proposal_id
+
+where TIMESTAMP_SUB(pp._created, INTERVAL 3 HOUR) >= '2024-01-01' 
+AND TIMESTAMP_SUB(pp._created, INTERVAL 3 HOUR) <= '2026-01-31' 
+
+order by data_analise desc
